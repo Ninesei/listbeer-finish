@@ -1,0 +1,24 @@
+.random-item img{
+    display: block;
+    width: 100%;
+    
+    }
+    .random-section{
+      padding: 30px;
+    }
+    .random-containner{
+      max-width: 800px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .random-grid {
+      display: grid;
+      column-gap: 20px;
+      grid-template-columns: 1fr 1fr;
+      row-gap: 20px;
+      max-width: 800px;
+      margin-left: auto;
+      margin-right: auto;
+      padding: 30px;
+    }
+    

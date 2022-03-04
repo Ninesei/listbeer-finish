@@ -1,0 +1,23 @@
+.index-item img{
+display: block;
+width: 20%;
+
+}
+.index-section{
+  padding: 30px;
+}
+.index-containner{
+  max-width: 800px;
+  margin-left: auto;
+  margin-right: auto;
+}
+.index-grid {
+  display: grid;
+  column-gap: 20px;
+  grid-template-columns: 1fr 1fr;
+  row-gap: 20px;
+  max-width: 800px;
+  margin-left: auto;
+  margin-right: auto;
+  padding: 30px;
+}

@@ -1,0 +1,230 @@
+import React from "react";
+
+import { LoadingPage } from "../component/page-component/loading";
+import { ConfirmBoothTemplate, SelectBoothTemplate, SelectMoodAndTone, SelectPackage } from "../component/page-component";
+import api from "../service/webservice";
+import { CMS_URL, EVENT_ID } from "../util/constant";
+import { getAuthData } from "../service/auth";
+import Router from "next/router";
+import { getServerSideErrorHandler } from "../util";
+
+export async function getServerSideProps(ctx) {
+
+    try {
+
+        const { token, profile } = await getAuthData(ctx)
+        const res = await api.getBoothPackageMaster({ eventID: EVENT_ID }, ctx)
+
+        return {
+            props: {
+                boothGroupList: res.data.result,
+                token,
+                profile
+            },
+        }
+    } catch (error) {
+        return getServerSideErrorHandler({
+            context: ctx,
+            error,
+            showLog: true,
+            props: {
+                boothGroupList: [],
+                profile: null,
+                token: null
+            }
+        })
+    }
+
+}
+
+const PAGE_PROGRESS = {
+    SELECT_PACKAGE: 'select-package',
+    SELECT_MOOD_TONE: 'select-mood-and-tone',
+    SELECT_BOOTH_TEMPLATE: 'select-booth-template',
+    CONFIRM_BOOTH_TEMPLATE: 'confirm-booth-template'
+}
+
+class Home extends React.Component {
+
+    constructor(props) {
+        super(props)
+        this.state = {
+            token: props.token,
+            pageLoading: false,
+            templateBoothGroupID: '',
+            boothPackageID: '',
+            boothMoodAndToneID: '',
+            boothTemplateID: '',
+            pageProgress: PAGE_PROGRESS.SELECT_PACKAGE,
+            boothGroupList: props.boothGroupList,
+            selectedBoothPackage: null,
+            selectedMoodAndTone: null,
+            boothTemplateData: null,
+            selectedBoothTemplate: null,
+            price: 0
+        }
+    }
+
+    showPageLoading = () => {
+        this.setState({ pageLoading: true })
+    }
+
+    hidePageLoading = () => {
+        this.setState({ pageLoading: false })
+    }
+
+    updatePageProgress = (pageProgress) => {
+        this.setState({ pageProgress })
+    }
+
+    onSelectBoothPackage = (boothPackage, boothGroup) => () => {
+        this.showPageLoading()
+        const findBoothGroup = this.state.boothGroupList.find(g => g.templateBoothGroupID === boothGroup.templateBoothGroupID)
+        setTimeout(() => {
+            this.setState({
+                selectedBoothPackage: boothPackage,
+                pageProgress: PAGE_PROGRESS.SELECT_MOOD_TONE,
+                boothPackageID: boothPackage.boothPackagesID,
+                templateBoothGroupID: boothGroup.templateBoothGroupID,
+                price: findBoothGroup ? findBoothGroup.price : 0
+            }, () => {
+                this.hidePageLoading()
+            })
+        }, 1500)
+    }
+
+    onSelectMoodAndTone = (tone) => () => {
+        this.showPageLoading()
+        setTimeout(() => {
+            const { boothPackageID, templateBoothGroupID } = this.state
+            api.getBoothTemplateMaster({
+                eventID: EVENT_ID,
+                boothMoodAndToneID: tone.boothMoodAndToneID,
+                boothPackageID,
+                templateBoothGroupID
+            }).then(res => {
+                this.setState({
+                    boothTemplateData: res.data.result,
+                    selectedMoodAndTone: tone,
+                    pageProgress: PAGE_PROGRESS.SELECT_BOOTH_TEMPLATE,
+                    boothMoodAndToneID: tone.boothMoodAndToneID
+                }, () => {
+                    this.hidePageLoading()
+                })
+            })
+        }, 1000)
+    }
+
+    onSelectBoothTemplate = (template) => () => {
+        this.showPageLoading()
+        setTimeout(() => {
+            this.setState({
+                boothTemplateID: template.id,
+                selectedBoothTemplate: template,
+                pageProgress: PAGE_PROGRESS.CONFIRM_BOOTH_TEMPLATE
+            }, () => {
+                this.hidePageLoading()
+            })
+        }, 1000)
+    }
+
+    goToSelectPackage = () => {
+        this.showPageLoading()
+        setTimeout(() => {
+            this.setState({
+                pageProgress: PAGE_PROGRESS.SELECT_PACKAGE
+            }, () => {
+                this.hidePageLoading()
+            })
+        }, 1000)
+    }
+
+    goToSelectTemplate = () => {
+        this.showPageLoading()
+        setTimeout(() => {
+            this.setState({
+                pageProgress: PAGE_PROGRESS.SELECT_BOOTH_TEMPLATE
+            }, () => {
+                this.hidePageLoading()
+            })
+        }, 1000)
+    }
+
+    goToSelectMoodAndTone = () => {
+        this.showPageLoading()
+        setTimeout(() => {
+            this.setState({
+                pageProgress: PAGE_PROGRESS.SELECT_MOOD_TONE
+            }, () => {
+                this.hidePageLoading()
+            })
+        }, 1000)
+    }
+
+    onConfirmBoothTemplate = () => () => {
+        const { boothMoodAndToneID, boothPackageID, boothTemplateID, templateBoothGroupID, token } = this.state
+        this.showPageLoading()
+        setTimeout(() => {
+            if (token) {
+                window.location.href = (`/payment?boothMoodAndToneID=${boothMoodAndToneID}&boothPackageID=${boothPackageID}&boothTemplateID=${boothTemplateID}&templateBoothGroupID=${templateBoothGroupID}`)
+            } else {
+                Router.push(`/register?ref=payment&boothMoodAndToneID=${boothMoodAndToneID}&boothPackageID=${boothPackageID}&boothTemplateID=${boothTemplateID}&templateBoothGroupID=${templateBoothGroupID}`)
+            }
+        }, 500)
+    }
+
+    componentDidMount() {
+        // console.log('this.props: ', this.props);
+    }
+
+
+    render() {
+        const { pageLoading, pageProgress, boothGroupList, selectedBoothPackage, boothTemplateData, selectedBoothTemplate, selectedMoodAndTone, boothPackageID, templateBoothGroupID } = this.state
+        if (pageLoading) {
+            return <LoadingPage />
+        } else if (pageProgress === PAGE_PROGRESS.SELECT_PACKAGE) {
+            return <SelectPackage
+                profile={this.props.profile}
+                token={this.props.token}
+                boothGroupList={boothGroupList}
+                onSelectBoothPackage={this.onSelectBoothPackage}
+            />
+        } else if (pageProgress === PAGE_PROGRESS.SELECT_MOOD_TONE) {
+            return <SelectMoodAndTone
+                profile={this.props.profile}
+                token={this.props.token}
+                price={this.state.price}
+                selectedBoothPackage={selectedBoothPackage}
+                onSelectMoodAndTone={this.onSelectMoodAndTone}
+                goToSelectPackage={this.goToSelectPackage}
+                boothPackageID={boothPackageID}
+                templateBoothGroupID={templateBoothGroupID}
+            />
+        } else if (pageProgress === PAGE_PROGRESS.SELECT_BOOTH_TEMPLATE) {
+            return <SelectBoothTemplate
+                profile={this.props.profile}
+                token={this.props.token}
+                boothTemplateData={boothTemplateData}
+                onSelectBoothTemplate={this.onSelectBoothTemplate}
+                goToSelectMoodAndTone={this.goToSelectMoodAndTone}
+                goToSelectPackage={this.goToSelectPackage}
+            />
+        } else if (pageProgress === PAGE_PROGRESS.CONFIRM_BOOTH_TEMPLATE) {
+            return <ConfirmBoothTemplate
+                profile={this.props.profile}
+                token={this.props.token}
+                price={this.state.price}
+                boothTemplateData={boothTemplateData}
+                selectedBoothPackage={selectedBoothPackage}
+                selectedMoodAndTone={selectedMoodAndTone}
+                selectedBoothTemplate={selectedBoothTemplate}
+                goToSelectTemplate={this.goToSelectTemplate}
+                onConfirmBoothTemplate={this.onConfirmBoothTemplate}
+                goToSelectPackage={this.goToSelectPackage}
+            />
+        }
+    }
+
+}
+
+export default Home;

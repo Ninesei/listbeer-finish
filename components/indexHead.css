@@ -1,0 +1,12 @@
+.index-header {
+    font-size: xx-large ;
+    border-top: 5px solid black;
+    border-bottom: 5px solid gray;
+    height: 50px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  .index-logo{
+  height: 50px;
+  }

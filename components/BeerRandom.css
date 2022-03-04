@@ -1,0 +1,12 @@
+.beer-random {
+  margin-bottom: 10px;
+}
+.beer-random-s {
+  width: 100px;
+  height: 50px;
+  font-size: 16px;
+  box-sizing: border-box;
+  border: 1px solid gray;
+  align-items: center;
+
+}
